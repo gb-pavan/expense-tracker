@@ -1,21 +1,49 @@
 // controllers/transactionController.js
 const Transaction = require('../models/transaction');
+console.log('inside top controller')
 
-// Get all transactions
+// // Get all transactions
+// exports.getTransactions = (req, res) => {
+//     Transaction.getAll((err, transactions) => {
+//         if (err) return res.status(500).json({ error: err.message });
+//         res.json(transactions);
+//     });
+// };
+
+// Retrieve transactions for the authenticated user with pagination
 exports.getTransactions = (req, res) => {
-    Transaction.getAll((err, transactions) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(transactions);
+    const userId = req.user.userId;
+    const { page = 1, limit = 5 } = req.query; // Default to page 1, 10 transactions per page
+    const offset = (page - 1) * limit;
+
+    Transaction.getTransactions(userId, limit, offset, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error retrieving transactions' });
+        }
+        res.json(rows);
     });
 };
 
-// Add new transaction
+// // Add new transaction
+// exports.createTransaction = (req, res) => {
+//     console.log("yes")
+//     const data = req.body;
+//     Transaction.create(data, (err, result) => {
+//         if (err) return res.status(500).json({ error: err.message });
+//         res.json({ message: 'Transaction added successfully', id: result.id });
+//     });
+// };
+
+// Add a new transaction for the authenticated user
 exports.createTransaction = (req, res) => {
-    console.log("yes")
-    const data = req.body;
-    Transaction.create(data, (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Transaction added successfully', id: result.id });
+    const { type, category, amount, date, description } = req.body;
+    const userId = req.user.userId;
+
+    Transaction.createTransaction(type, category, amount, date, description, userId, (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error creating transaction' });
+        }
+        res.status(201).json({ message: 'Transaction created', transactionId: result.lastID });
     });
 };
 
@@ -45,5 +73,30 @@ exports.deleteTransaction = (req, res) => {
     Transaction.delete(id, (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Transaction deleted successfully' });
+    });
+};
+
+console.log("just above")
+
+// Function to get a summary of transactions
+exports.getSummary = (req, res) => {
+    console.log("just innnnn")
+    const { startDate, endDate } = req.query;
+
+    console.log("in controller")
+
+    console.log('start date',startDate)
+
+    Transaction.getSummary(startDate, endDate, (err, summary) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        const balance = (summary.total_income || 0) - (summary.total_expense || 0);
+        res.json({
+            total_income: summary.total_income || 0,
+            total_expense: summary.total_expense || 0,
+            balance,
+        });
     });
 };

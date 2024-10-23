@@ -13,23 +13,26 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // Create tables if they don't exist
+// Initialize tables when the server starts
 db.serialize(() => {
     db.run(`
-        CREATE TABLE IF NOT EXISTS transactions (
+        CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            type TEXT NOT NULL,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            date TEXT NOT NULL,
-            description TEXT
+            username TEXT UNIQUE,
+            password TEXT
         )
     `);
 
     db.run(`
-        CREATE TABLE IF NOT EXISTS categories (
+        CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            type TEXT NOT NULL
+            type TEXT,
+            category TEXT,
+            amount REAL,
+            date TEXT,
+            description TEXT,
+            user_id INTEGER,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     `);
 });
